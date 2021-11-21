@@ -1,0 +1,220 @@
+-- CERINTA 11
+
+--1 Selectati id-ul, numele, prenumele si numarul de goluri al fiecarui jucator spaniol care a participat si au marcat la editia cu numarul 21 a campionatului.
+-- Selectez atributele mentionate in enunt, fac join prima data intre 'jucator' si 'echipa_nationala' pentru a avea acces la atributul 'tara' pentru a verifica daca 
+-- jucatorul reprezinta nationala Spaniei, dupa care fac join mai departe si cu 'participare' pentru a aduna golurile marcate si a vedee acces la id-urile meciurilor. 
+-- Apoi, fac join si cu meci pentru a avea acces la atributul id_campionat, dupa care fac join si cu 'campionat_mondial' pentru a verifica numarul editiei in care s-a jucat meciul
+-- Dupa ce grupez rezultatele, in 'HAVING' verific ca jucatorul respectiv sa aiba cel putin un gol marcat.
+SELECT id_jucator "Id", j.nume "Nume", j.prenume "Prenume", SUM(NVL(p.nr_goluri, 0)) "Total goluri - editia 21"
+FROM jucator j
+JOIN echipa_nationala e USING(id_echipa)
+JOIN participare p USING(id_jucator)
+JOIN meci m USING(id_meci)
+JOIN campionat_mondial c USING(id_campionat)
+WHERE UPPER(e.tara) LIKE 'SPANIA' AND c.nr_editie = 21
+GROUP BY id_jucator, j.nume, j.prenume
+HAVING SUM(NVL(p.nr_goluri, 0)) > 0;
+
+--2 Afisati pentru fiecare meci jucat de Belgia id-ul meciului, adversarul, rezultatul si numarul de puncte castigate, sub forma de 
+--string ('victorie', 'egal', 'infrangere') Folosesc clauza 'WITH' pentru a crea tabelul bel_meci, in care selectez id-ul meciurilor 
+--jucate de Belgia si numarul de goluri pe care acestia l-au marcat. Pentru a calcula numarul de goluri, adun golurile marcate de 
+--jucatorii care au reprezentat Belgia in acel meci. Apoi, am o cerere in FROM care imi selecteaza id-ul meciului, oponentul si rezultatul
+--('victorie', 'infrangere', 'egal'). In FROM-ul cererii interioare am o subcerere care calculeaza pentru fiecare meci numarul de goluri 
+--marcate de celelalte echipe. Apoi, fac join cu bel_meci pentru a ramane doar cu meciurile in care a jucat Belgia.
+-- Pentru a folosi si functia 'DECODE', in cererea exterioara am mai adaugat o coloana care retine numarul de puncte castigate in acel meci,
+-- in functie de rezultat.
+WITH bel_meci AS 
+(
+  SELECT id_meci, SUM(NVL(nr_goluri, 0)) as goluri_belgia
+  FROM meci m
+  JOIN participare p USING (id_meci)
+  JOIN jucator j USING (id_jucator)
+  JOIN echipa_nationala e USING (id_echipa)
+  WHERE LOWER(e.tara) LIKE 'belgia'
+  GROUP BY id_meci
+)
+SELECT id_meci, tara, rezultat, DECODE(rezultat, 'victorie', 3,
+                                                 'infrangere', 0,
+                                                               1) "puncte"
+FROM(
+SELECT id_meci, tara, CASE WHEN goluri_belgia - op_goluri > 0 THEN 'victorie'
+                           WHEN goluri_belgia - op_goluri < 0 THEN 'infrangere'
+                           ELSE 'egal' END  as rezultat
+                                                                                    
+FROM (
+  SELECT id_meci, tara, SUM(NVL(nr_goluri, 0)) as op_goluri
+  FROM meci m
+  JOIN participare USING(id_meci)
+  JOIN jucator j USING (id_jucator)
+  JOIN echipa_nationala e USING (id_echipa)
+  WHERE id_meci IN (SELECT id_meci FROM bel_meci) AND lower(e.tara) != 'belgia'
+  GROUP BY id_meci, tara
+  )
+  JOIN bel_meci USING (id_meci)
+);  
+  
+--3 Afisati numarul zilei/numerele zilelor cu cele mai multe meciuri disputate in ultimii 10 ani(nu se refera la o perioada de 10 ani, se refera la 'in unul din ultimii 10 ani').
+-- Folosesc clauza 'WITH' pentru a retine o cerere care imi calculeaza pentru fiecare zi numarul de meciuri din ultimii 10 ani,
+-- dupa care ordoneaza rezultatele descrescator. Apoi am o cerere care selecteaza doar zilele in care numarul de meciuri a fost maxim.
+WITH e AS
+(
+   SELECT TO_CHAR(data_meci, 'DD') as zi, COUNT(TO_CHAR(data_meci, 'DD')) as nr_meciuri
+   FROM meci
+   WHERE EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM data_meci) < 10
+   GROUP BY TO_CHAR(data_meci, 'DD')
+   ORDER BY COUNT(TO_CHAR(data_meci, 'DD')) DESC
+)
+SELECT zi
+FROM  e
+WHERE nr_meciuri = (SELECT MAX(nr_meciuri) FROM e);
+
+--4 Afisati toti jucatorii(id-ul si numele) care au jucat cel putin un meci la un campionat mondial organizat in Rusia, pe un stadion cu o capacitate mai mare de 45000.
+-- Selectez id_ul jucatorului si numele. Folosesc UNIQUE pentru ca unii jucatori au jucat mai multe meciuri de genul. Fac join cu tabelul 'jucator'
+-- pentru a avea acces la numele jucatorului. In WHERE verific daca meciul cu id-ul respectiv s-a jucat pe un stadion cu o capacitate mai mare de 45000 de
+-- locuri si daca meciul a fost jucat la o editie la care Rusia a fost tara organizatoare.
+SELECT UNIQUE id_jucator, j.nume
+FROM participare p
+JOIN jucator j USING(id_jucator)
+WHERE id_meci IN (SELECT id_meci
+                 FROM meci
+                 JOIN stadion s USING(id_stadion)
+                 JOIN campionat_mondial c USING (id_campionat)
+                 WHERE s.nr_locuri > 45000 AND UPPER(c.tara_organizatoare) LIKE 'RUSIA');
+
+--5 Afisati tarile organizatoare care au avut un profit de peste 10000000 din banii primiti de la sponsori si din drepturile tv, si dupa 
+-- platile facute pentru firmele organizatoare. Afisati si numarul editiei.
+-- Fac cu ajutorul clauzei 'WITH' tabele cu sumele primite/date pentru fiecare id_campionat. Dupa selectez tara organizatoare si numarul editiei
+-- din 'campionat_mondial'. In where verific daca veniturile castigate din sponsori si drepturi tv, minus cheltuielile pentru firmele organizatoare
+-- trec de valoarea 10000000
+WITH sp AS 
+(
+  SELECT id_campionat, SUM(suma_contract) as sponsor
+  FROM contract_sponsor
+  GROUP BY id_campionat
+),
+cn AS
+(
+  SELECT id_campionat, SUM(suma_contract) as canal
+  FROM contract_canal_tv
+  GROUP BY id_campionat
+),
+f AS
+(
+  SELECT id_campionat, SUM(suma_contract) as firma
+  FROM contract_firma
+  GROUP BY id_campionat
+)           
+SELECT  tara_organizatoare, nr_editie
+FROM campionat_mondial c
+WHERE (SELECT sponsor + canal - firma
+       FROM sp
+       JOIN cn USING (id_campionat)
+       JOIN f USING (id_campionat)
+       WHERE id_campionat = c.id_campionat) > 10000000;
+       
+
+-- CERINTA 12
+       
+-- Actualizez pretul biletelor in functie de faza competitiei. Daca pretul este null,
+-- nu actualizez nimic.
+UPDATE bilet
+SET pret = (SELECT DECODE(faza_competitie, 'grupe' , 200,
+                                           'optimi', 500,
+                                           'sferturi', 700,
+                                           'semifinale', 1000,
+                                           'finala', 1500,
+                                                     null)
+            FROM meci
+            WHERE meci.id_meci = bilet.id_meci)
+WHERE pret IS NOT NULL
+;
+
+COMMIT;
+
+-- Actualizez fiecare email care este null. Emailul va fi format prin concatenarea
+-- primelor trei litere din nume, primelor trei litere din prenume, a numarului de 
+-- bilete cumparate si a sirului '@gmail.com'
+UPDATE client
+SET email = SUBSTR(LOWER(nume), 1, 3)||SUBSTR(LOWER(prenume), 1, 3)||(SELECT COUNT(id_bilet)
+                            FROM bilet
+                            WHERE bilet.id_client = client.id_client)||'@gmail.com'
+WHERE email IS NULL;
+
+COMMIT;
+
+-- Actualizez suma contractelor incheiate cu sponsorii pentru campionatul cu id-ul 1.
+-- Daca in campionatul cu id-ul 2 a fost incheiat un contract cu acelasi sponsor, valoarea
+-- noului contract este cu 20% mai mult decat acela, daca nu, valoarea este de 1000000
+UPDATE contract_sponsor c
+SET suma_contract = NVL((SELECT 1.2 * suma_contract
+                         FROM contract_sponsor s
+                         WHERE s.id_campionat = 2 AND s.id_sponsor = c.id_sponsor), 1000000)
+WHERE id_campionat = 1;
+
+COMMIT;
+    
+-- CERINTA 13
+-- Secventa folosita la inserare
+
+CREATE SEQUENCE CLIENT_ID
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE; 
+
+-- CERINTA 16
+
+-- Afisez pentru fiecare client numele si prenumele, iar in cazul in care acesta nu a achizitionat un bilet cu valoarea mai mare de 500,
+-- afisez null pentru numele stadionului. Daca a platit mai mult de 500 pe un bilet, afisez numele stadionului. Un client poate aparea de mai multe ori, 
+-- in functie de numarul de bilete cu pretul mai mare de 500 cumparate. 
+SELECT c.nume, c.prenume, s.nume
+FROM (SELECT id_bilet, id_meci, id_client
+      FROM bilet
+      WHERE pret > 500) b
+RIGHT JOIN client c USING (id_client)
+LEFT JOIN meci m USING (id_meci)
+LEFT JOIN stadion s USING (id_stadion);
+
+--Sa se obtina numele jucatorilor care au jucat in toate meciurile pentru echipa Portugaliei.
+-- Folosesc clauza 'WITH' pentru a crea un tabel in care am id-ul jucatorilor portughezi si id-ul
+-- meciurilor in care au jucat. Apoi simulez diviziunea utilizand de doua ori 'NOT EXISTS'
+-- Si verific daca exista vreun meci in care au jucat jucatori portughezi, dar nu a jucat jucatorul
+-- la care eram in cererea exterioara.
+WITH meci_por AS
+(
+  SELECT id_jucator, id_meci
+  FROM participare
+  JOIN jucator USING(id_jucator)
+  JOIN echipa_nationala USING (id_echipa)
+  WHERE UPPER(tara) LIKE 'PORTUGALIA'
+)
+SELECT nume, prenume
+FROM jucator j
+WHERE NOT EXISTS
+(
+  SELECT 1
+  FROM meci_por a
+  WHERE NOT EXISTS
+  (
+    SELECT 1
+    FROM meci_por b
+    WHERE a.id_meci = b.id_meci AND j.id_jucator = b.id_jucator
+  )
+);
+    
+-- Selectati numele si prenumele jucatorilor care au participat doar la campionatul cu id-ul 1.
+-- Folosesc de doua ori 'NOT EXISTS', la fel ca mai sus, pentru a verifica daca exista vreun meci
+-- in care a jucat jucatorul respectiv si nu a apartinut de campionatul cu id-ul 1.
+SELECT nume, prenume
+FROM jucator j
+WHERE NOT EXISTS 
+(
+  SELECT 1
+  FROM participare p
+  WHERE j.id_jucator = p.id_jucator AND NOT EXISTS
+  (
+    SELECT 1
+    FROM meci m
+    WHERE p.id_meci = m.id_meci AND m.id_campionat = 1
+  )
+);

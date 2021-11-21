@@ -1,0 +1,589 @@
+CREATE TABLE CAMPIONAT_MONDIAL
+(
+   id_campionat NUMBER(5) CONSTRAINT pk_campionat PRIMARY KEY,
+   tara_organizatoare VARCHAR2(25) CONSTRAINT tara_org_nn NOT NULL,
+   nr_editie NUMBER(3) CONSTRAINT nr_ed_nn NOT NULL
+);
+
+CREATE TABLE firma_organizatoare
+(
+   id_firma NUMBER(5) CONSTRAINT pk_firma_org PRIMARY KEY,
+   an_infiintare DATE,
+   denumire VARCHAR2(25) CONSTRAINT denum_firma_nn NOT NULL,
+   email VARCHAR2(20)
+);
+
+CREATE TABLE sponsor
+(
+   id_sponsor NUMBER(5) CONSTRAINT pk_sponsor PRIMARY KEY,
+   denumire VARCHAR2(25) CONSTRAINT denum_sponsor_nn NOT NULL,
+   email VARCHAR2(20)
+);
+
+CREATE TABLE canal_tv
+(
+   id_canal NUMBER(5) CONSTRAINT pk_canal_org PRIMARY KEY,
+   denumire VARCHAR2(25) CONSTRAINT denum_canal_nn NOT NULL,
+   email VARCHAR2(20)
+);
+
+CREATE TABLE antrenor 
+(
+   id_antrenor NUMBER(5) CONSTRAINT pk_antrenor PRIMARY KEY,
+   nume VARCHAR2(25) CONSTRAINT nume_ant_nn NOT NULL,
+   prenume VARCHAR2(25) CONSTRAINT prenume_ant_nn NOT NULL,
+   data_nasterii DATE CONSTRAINT data_n_ant_nn NOT NULL
+);
+
+CREATE TABLE echipa_nationala 
+(
+   id_echipa NUMBER(5) CONSTRAINT pk_echipa PRIMARY KEY,
+   tara VARCHAR2(25) CONSTRAINT nume_tara_nn NOT NULL,
+   an_infiintare DATE CONSTRAINT infiintare_nn NOT NULL
+);
+
+CREATE TABLE jucator
+(
+   id_jucator NUMBER(5) CONSTRAINT pk_jucator PRIMARY KEY,
+   id_echipa  NUMBER(5) CONSTRAINT juc_echipa_nn NOT NULL,
+   nume VARCHAR2(25) CONSTRAINT nume_juc_nn NOT NULL,
+   prenume VARCHAR2(25) CONSTRAINT prenume_juc_nn NOT NULL,
+   data_nasterii DATE CONSTRAINT data_n_juc_nn NOT NULL,
+   CONSTRAINT fk_jucator FOREIGN KEY (id_echipa) REFERENCES echipa_nationala(id_echipa)
+);
+
+CREATE TABLE stadion
+(
+   id_stadion NUMBER(5) CONSTRAINT pk_stadion PRIMARY KEY,
+   nume VARCHAR2(25) CONSTRAINT nume_stadion_nn NOT NULL,
+   oras VARCHAR2(25) CONSTRAINT oras_stadion_nn NOT NULL,
+   nr_locuri NUMBER(6) CONSTRAINT nr_locuri_stadion_nn NOT NULL
+);
+
+CREATE TABLE client
+(
+   id_client NUMBER(10) CONSTRAINT pk_client PRIMARY KEY,
+   nume VARCHAR2(25) CONSTRAINT nume_client_nn NOT NULL,
+   prenume VARCHAR2(25) CONSTRAINT prenume_client_nn NOT NULL,
+   email VARCHAR2(25)
+);
+
+CREATE TABLE arbitru
+(
+   id_arbitru NUMBER(5) CONSTRAINT pk_arbitru PRIMARY KEY,
+   nume VARCHAR2(25) CONSTRAINT nume_arb_nn NOT NULL,
+   prenume VARCHAR2(25) CONSTRAINT prenume_arb_nn NOT NULL,
+   data_nasterii DATE CONSTRAINT data_n_arb_nn NOT NULL,
+   nationalitate VARCHAR2(25) CONSTRAINT nat_arb_nn NOT NULL
+);
+
+CREATE TABLE de_centru
+(
+   id_arbitru  NUMBER(5) CONSTRAINT pk_arb_de_centru PRIMARY KEY,
+   id_de_centru NUMBER(5) CONSTRAINT id_de_centru_nn NOT NULL,
+   nr_cartonase NUMBER(3) CONSTRAINT nr_cart_arb_nn NOT NULL,
+   CONSTRAINT fk_arb_de_centru FOREIGN KEY (id_arbitru) REFERENCES arbitru(id_arbitru),
+   CONSTRAINT id_de_centru_unique UNIQUE (id_de_centru)
+);
+
+CREATE TABLE de_linie
+(
+   id_arbitru  NUMBER(5) CONSTRAINT pk_arb_de_linie PRIMARY KEY,
+   id_de_linie NUMBER(5) CONSTRAINT id_de_linie_nn NOT NULL,
+   nr_offside NUMBER(3) CONSTRAINT nr_off_arb_nn NOT NULL,
+   CONSTRAINT fk_arb_de_linie FOREIGN KEY (id_arbitru) REFERENCES arbitru(id_arbitru),
+   CONSTRAINT id_de_linie_unique UNIQUE (id_de_linie)
+);
+
+CREATE TABLE meci
+(
+   id_meci NUMBER(5) CONSTRAINT pk_meci PRIMARY KEY,
+   id_de_centru NUMBER(5) CONSTRAINT arb_centru_nn NOT NULL,
+   id_campionat NUMBER(5) CONSTRAINT id_camp_nn NOT NULL,
+   id_stadion NUMBER(5) CONSTRAINT id_stad_nn NOT NULL,
+   faza_competitie VARCHAR2(25) CONSTRAINT faza_nn NOT NULL,
+   data_meci DATE CONSTRAINT date_nn NOT NULL,
+   CONSTRAINT fk_de_centru FOREIGN KEY (id_de_centru) REFERENCES de_centru(id_de_centru),
+   CONSTRAINT fk_camp FOREIGN KEY (id_campionat) REFERENCES campionat_mondial(id_campionat),
+   CONSTRAINT fk_stad FOREIGN KEY (id_stadion) REFERENCES stadion(id_stadion)
+);
+
+CREATE TABLE bilet
+(
+   id_bilet NUMBER(6) CONSTRAINT pk_bilet PRIMARY KEY,
+   id_meci NUMBER(5) CONSTRAINT meci_nn NOT NULL,
+   id_client NUMBER(10) CONSTRAINT client_nn NOT NULL,
+   nr_scaun NUMBER(6) CONSTRAINT scaun_nn NOT NULL,
+   pret NUMBER(4),
+   CONSTRAINT fk_meci FOREIGN KEY (id_meci) REFERENCES meci(id_meci),
+   CONSTRAINT fk_client FOREIGN KEY (id_client) REFERENCES client(id_client)
+);
+
+CREATE TABLE contract_firma 
+(
+   id_firma NUMBER(5) CONSTRAINT firma_nn NOT NULL,
+   id_campionat NUMBER(5) CONSTRAINT camp_nn NOT NULL,
+   suma_contract NUMBER(9) CONSTRAINT suma_nn NOT NULL,
+   CONSTRAINT pk_contr_f PRIMARY KEY (id_firma, id_campionat),
+   CONSTRAINT fk_firma FOREIGN KEY (id_firma) REFERENCES firma_organizatoare(id_firma),
+   CONSTRAINT fk_camp_f FOREIGN KEY (id_campionat) REFERENCES campionat_mondial(id_campionat)
+);
+
+CREATE TABLE contract_sponsor
+(
+   id_sponsor NUMBER(5) CONSTRAINT sponsor_nn NOT NULL,
+   id_campionat NUMBER(5) CONSTRAINT camp_s_nn NOT NULL,
+   suma_contract NUMBER(9) CONSTRAINT suma_s_nn NOT NULL,
+   CONSTRAINT pk_contr_s PRIMARY KEY (id_sponsor, id_campionat),
+   CONSTRAINT fk_sponsor FOREIGN KEY (id_sponsor) REFERENCES sponsor(id_sponsor),
+   CONSTRAINT fk_camp_s FOREIGN KEY (id_campionat) REFERENCES campionat_mondial(id_campionat)
+);
+
+CREATE TABLE contract_canal_tv
+(
+   id_canal NUMBER(5) CONSTRAINT canal_nn NOT NULL,
+   id_campionat NUMBER(5) CONSTRAINT camp_c_nn NOT NULL,
+   suma_contract NUMBER(9) CONSTRAINT suma_c_nn NOT NULL,
+   CONSTRAINT pk_contr_c PRIMARY KEY (id_canal, id_campionat),
+   CONSTRAINT fk_canal FOREIGN KEY (id_canal) REFERENCES canal_tv(id_canal),
+   CONSTRAINT fk_camp_c FOREIGN KEY (id_campionat) REFERENCES campionat_mondial(id_campionat)
+);
+
+CREATE TABLE participare
+(
+   id_meci NUMBER(5) CONSTRAINT p_meci_nn NOT NULL,
+   id_jucator NUMBER(5) CONSTRAINT p_juc_nn NOT NULL,
+   nr_goluri NUMBER(2),
+   CONSTRAINT pk_participare PRIMARY KEY (id_meci, id_jucator),
+   CONSTRAINT fk_p_meci FOREIGN KEY (id_meci) REFERENCES meci(id_meci),
+   CONSTRAINT fk_p_juc FOREIGN KEY (id_jucator) REFERENCES jucator(id_jucator)
+);
+
+CREATE TABLE arb_linie_meci
+(
+   id_de_linie NUMBER(5) CONSTRAINT arb_linie_meci_nn NOT NULL,
+   id_meci NUMBER(5) CONSTRAINT arb_meci_nn NOT NULL,
+   CONSTRAINT pk_arb_linie_meci PRIMARY KEY (id_de_linie, id_meci),
+   CONSTRAINT fk_arb_meci FOREIGN KEY (id_meci) REFERENCES meci(id_meci),
+   CONSTRAINT fk_arb_linie  FOREIGN KEY (id_de_linie) REFERENCES de_linie(id_de_linie) 
+ );  
+ 
+ 
+ CREATE TABLE antrenor_echipa_editie
+ (
+    id_antrenor NUMBER(5) CONSTRAINT ant_nn NOT NULL,
+    id_echipa NUMBER(5) CONSTRAINT ech_nn NOT NULL,
+    id_campionat NUMBER(5) CONSTRAINT camp_ant_ech_nn NOT NULL,
+    CONSTRAINT pk_ant_echp_camp PRIMARY KEY (id_antrenor, id_echipa, id_campionat),
+    CONSTRAINT fk_ant FOREIGN KEY (id_antrenor) REFERENCES antrenor(id_antrenor),
+    CONSTRAINT fk_ech FOREIGN KEY (id_echipa) REFERENCES echipa_nationala(id_echipa),
+    CONSTRAINT fk_camp_ant_ech FOREIGN KEY (id_campionat) REFERENCES campionat_mondial(id_campionat)
+);
+
+
+
+INSERT ALL
+  INTO firma_organizatoare (id_firma, an_infiintare, denumire, email) VALUES (1, TO_DATE('1980', 'YYYY'), 'ABC SECURITY', 'abc_sec@ymail.com')
+  INTO firma_organizatoare (id_firma, an_infiintare, denumire, email) VALUES (2, TO_DATE('1984', 'YYYY'), 'QWERTY', null)
+  INTO firma_organizatoare (id_firma, an_infiintare, denumire, email) VALUES (3, null, 'SPORT ORG', 'sport_org@ymail.com')
+  INTO firma_organizatoare (id_firma, an_infiintare, denumire, email) VALUES (4, TO_DATE('1990', 'YYYY'), 'CITY GROUP', 'city_g@ymail.com')
+  INTO firma_organizatoare (id_firma, an_infiintare, denumire, email) VALUES (5, NULL, 'ABC SECURITY', null)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO sponsor (id_sponsor, denumire, email) VALUES (1, 'Coca-Cola', 'cocacola@ymail.com')
+  INTO sponsor (id_sponsor, denumire, email) VALUES (2, 'Mc Donalds', 'mcdonalds@ymail.com')
+  INTO sponsor (id_sponsor, denumire, email) VALUES (3, 'Budweiser', 'budw@ymail.com')
+  INTO sponsor (id_sponsor, denumire, email) VALUES (4, 'VISA', null)
+  INTO sponsor (id_sponsor, denumire, email) VALUES (5, 'Adidas', 'adidas@ymail.com')
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO canal_tv (id_canal, denumire, email) VALUES (1, 'BBC', 'bbc@ymail.com')
+  INTO canal_tv (id_canal, denumire, email) VALUES (2, 'TVR', 'tvr@ymail.com')
+  INTO canal_tv (id_canal, denumire, email) VALUES (3, 'TV5', 'tv5@ymail.com')
+  INTO canal_tv (id_canal, denumire, email) VALUES (4, 'ITV', null)
+  INTO canal_tv (id_canal, denumire, email) VALUES (5, 'DW', 'dw@ymail.com')
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO campionat_mondial (id_campionat, nr_editie, tara_organizatoare) VALUES (1, 21, 'Rusia')
+  INTO campionat_mondial (id_campionat, nr_editie, tara_organizatoare) VALUES (2, 20, 'Brazilia')
+  INTO campionat_mondial (id_campionat, nr_editie, tara_organizatoare) VALUES (3, 19, 'Africa de Sud')
+  INTO campionat_mondial (id_campionat, nr_editie, tara_organizatoare) VALUES (4, 18, 'Germania')
+  INTO campionat_mondial (id_campionat, nr_editie, tara_organizatoare) VALUES (5, 17, 'Japonia')
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (1, 1, 1000000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (3, 5, 500000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (3, 2, 500000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (4, 4, 3000000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (5, 2, 12000000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (1, 2, 1900000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (3, 1, 7600000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (3, 3, 1500000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (4, 5, 3000000)
+  INTO contract_firma (id_firma, id_campionat, suma_contract) VALUES (5, 3, 120500)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (1, 1, 1000000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (3, 1, 2000000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (1, 5, 1500000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (2, 2, 3400000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (3, 2, 100000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (4, 3, 5000000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (4, 4, 10000000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (5, 2, 650000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (5, 4, 1300000)
+  INTO contract_sponsor (id_sponsor, id_campionat, suma_contract) VALUES (2, 3, 1000000)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (1, 1, 1000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (3, 1, 1100000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (2, 3, 4000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (2, 5, 5000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (3, 5, 4400000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (2, 4, 41000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (3, 3, 10000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (5, 1, 17000000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (5, 4, 7500000)
+  INTO contract_canal_tv (id_canal, id_campionat, suma_contract) VALUES (1, 2, 12000000)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (1, 'Low', 'Joachim', TO_DATE('3-FEB-1960', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (2, 'del Bosque', 'Vicente', TO_DATE('23-DEC-1950', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (3, 'Deschamps', 'Didier', TO_DATE('15-OCT-1968', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (4, 'Scolari', 'Luiz Felipe', TO_DATE('9-NOV-1948', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (5, 'Martinez', 'Roberto', TO_DATE('13-JUL-1973', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (6, 'Southgate', 'Gareth', TO_DATE('3-SEP-1970', 'DD-MON-YYYY'))
+  INTO antrenor (id_antrenor, nume, prenume, data_nasterii) VALUES (7, 'Santos', 'Fernando', TO_DATE('10-OCT-1954', 'DD-MON-YYYY'))
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (1, 'Germania', TO_DATE('1904', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (2, 'Spania', TO_DATE('1907', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (3, 'Belgia', TO_DATE('1922', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (4, 'Franta', TO_DATE('1914', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (5, 'Brazilia', TO_DATE('1932', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (6, 'Anglia', TO_DATE('1878', 'YYYY'))
+  INTO echipa_nationala (id_echipa, tara, an_infiintare) VALUES (7, 'Portugalia', TO_DATE('1899', 'YYYY'))
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (3, 4, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (3, 4, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (3, 4, 3)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (7, 7, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (7, 7, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (4, 7, 3)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (6, 6, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (6, 1, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (1, 1, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (5, 3, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (1, 3, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (5, 6, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (2, 2, 1)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (2, 2, 2)
+   INTO antrenor_echipa_editie (id_antrenor, id_echipa, id_campionat) VALUES (4, 5, 1)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (1, 'Luzhniki', 'Moscova', 80000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (2, 'Krestovsky', 'St. Petersburg', 65000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (3, 'Kazan Arena', 'Kazan', 44000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (4, 'Samara Arena', 'Samara', 40000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (5, 'Maracana', 'Rio de Janeiro', 78000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (6, 'Arena de Sao Paulo', 'Sao Paulo', 62000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (7, 'Arena Fonte Nova', 'Salvador', 51000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (8, 'Estadio Mineirao', 'Belo Horizonte', 58000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (9, 'Soccer City Stadium', 'Johannesburg', 85000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (10, 'Cape Town Stadium', 'Cape Town', 64000)
+   INTO stadion (id_stadion, nume, oras, nr_locuri) VALUES (11, 'Durban Stadium', 'Durban', 62000)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (1, 1, 'Kross', 'Toni', TO_DATE('15-JUN-1990', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (2, 1, 'Ozil', 'Mesut', TO_DATE('17-MAR-1990', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (3, 2, 'Iniesta', 'Andres', TO_DATE('08-JUL-1986', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (4, 2, 'Ramos', 'Sergio', TO_DATE('22-JAN-1988', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (5, 1, 'Muller', 'Thomas', TO_DATE('11-SEP-1991', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (6, 3, 'de Bruyne', 'Kevin', TO_DATE('05-APR-1992', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (7, 3, 'Hazard', 'Eden', TO_DATE('07-FEB-1993', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (8, 4, 'Mbappe', 'Kylian', TO_DATE('18-AUG-1998', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (9, 4, 'Griezmann', 'Antoine', TO_DATE('15-JUN-1992', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (10, 5, 'da Silva', 'Neymar', TO_DATE('11-JUN-1993', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (11, 5, 'Coutinho', 'Philippe', TO_DATE('17-MAR-1994', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (12, 6, 'Kane', 'Harry', TO_DATE('01-OCT-1991', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (13, 6, 'Sterling', 'Raheem', TO_DATE('19-JUL-1993', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (14, 7, 'Ronaldo', 'Cristiano', TO_DATE('05-FEB-1985', 'DD-MON-YYYY'))
+   INTO jucator (id_jucator, id_echipa, nume, prenume, data_nasterii) VALUES (15, 7, 'Silva', 'Bernardo', TO_DATE('15-NOV-1995', 'DD-MON-YYYY'))
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (1, 'Webb', 'Howard', TO_DATE('15-JUN-1972', 'DD-MON-YYYY'), 'Anglia')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (2, 'Clement', 'Turpin', TO_DATE('17-MAR-1981', 'DD-MON-YYYY'), 'Franta')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (3, 'Kjuipers', 'Bjorn', TO_DATE('08-JUL-1976', 'DD-MON-YYYY'), 'Olanda')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (4, 'Collina', 'Pierluigi', TO_DATE('22-JAN-1960', 'DD-MON-YYYY'), 'Italia')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (5, 'Muller', 'Hans', TO_DATE('11-SEP-1974', 'DD-MON-YYYY'), 'Danemarca')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (6, 'Marco', 'Francesco', TO_DATE('05-APR-1982', 'DD-MON-YYYY'), 'Italia')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (7, 'Jackson', 'Lewis', TO_DATE('07-FEB-1983', 'DD-MON-YYYY'), 'Jamaica')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (8, 'Konate', 'Sadio', TO_DATE('18-AUG-1986', 'DD-MON-YYYY'), 'Senegal')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (9, 'Rodriguez', 'Gonzalez', TO_DATE('17-FEB-1983', 'DD-MON-YYYY'), 'Mexic')
+   INTO arbitru (id_arbitru, nume, prenume, data_nasterii, nationalitate) VALUES (10, 'Park', 'Tae-Yo', TO_DATE('18-SEP-1986', 'DD-MON-YYYY'), 'Coreea de Sud')
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO de_centru (id_arbitru, id_de_centru, nr_cartonase) VALUES (1, 1, 71)
+  INTO de_centru (id_arbitru, id_de_centru, nr_cartonase) VALUES (2, 2, 31)
+  INTO de_centru (id_arbitru, id_de_centru, nr_cartonase) VALUES (3, 3, 105)
+  INTO de_centru (id_arbitru, id_de_centru, nr_cartonase) VALUES (4, 4, 221)
+  INTO de_centru (id_arbitru, id_de_centru, nr_cartonase) VALUES (5, 5, 22)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO de_linie (id_arbitru, id_de_linie, nr_offside) VALUES (6, 1, 171)
+  INTO de_linie (id_arbitru, id_de_linie, nr_offside) VALUES (7, 2, 311)
+  INTO de_linie (id_arbitru, id_de_linie, nr_offside) VALUES (8, 3, 315)
+  INTO de_linie (id_arbitru, id_de_linie, nr_offside) VALUES (9, 4, 61)
+  INTO de_linie (id_arbitru, id_de_linie, nr_offside) VALUES (10, 5, 122)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (1, 1, 1, 1, 'grupe', TO_DATE('22-JUN-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (2, 2, 1, 2, 'optimi', TO_DATE('28-JUN-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (3, 5, 1, 1, 'finala', TO_DATE('15-JUL-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (4, 3, 1, 3, 'sferturi', TO_DATE('01-JUL-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (5, 4, 2, 6, 'grupe', TO_DATE('12-JUN-2014', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (6, 5, 2, 8, 'semifinala', TO_DATE('6-JUL-2014', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (7, 2, 2, 7, 'optimi', TO_DATE('29-JUN-2014', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (8, 3, 2, 5, 'finala', TO_DATE('13-JUL-2014', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (9, 3, 1, 4, 'grupe', TO_DATE('16-JUN-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (10, 5, 1, 1, 'grupe', TO_DATE('25-JUN-2018', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (11, 3, 2, 7, 'grupe', TO_DATE('22-JUN-2014', 'DD-MON-YYYY'))
+  INTO meci (id_meci, id_de_centru, id_campionat, id_stadion, faza_competitie, data_meci) VALUES (12, 1, 2, 5, 'optimi', TO_DATE('30-JUN-2014', 'DD-MON-YYYY'))
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (1, 1)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (5, 1)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (2, 2)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (4, 2)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (1, 3)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (4, 3)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (5, 4)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (2, 4)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (5, 5)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (4, 5)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (1, 6)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (3, 6)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (2, 7)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (3, 7)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (3, 8)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (4, 8)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (2, 9)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (3, 9)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (1, 10)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (3, 10)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (5, 11)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (1, 11)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (4, 12)
+  INTO arb_linie_meci (id_de_linie, id_meci) VALUES (2, 12)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+INSERT ALL
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (1, 1, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (2, 1, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (3, 1, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (4, 1, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (3, 2, 0)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (4, 2, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (14, 2, 3)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (8, 3, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (9, 3, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (12, 3, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (13, 3, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (6, 4, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (7, 4, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (10, 4, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (11, 4, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (2, 5, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (5, 5, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (14, 5, 0)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (15, 5, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (10, 6, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (5, 6, 3)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (14, 7, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (6, 7, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (7, 7 , 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (5, 8, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (6, 8, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (8, 9, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (14, 9, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (15, 9, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (3, 10, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (4, 10, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (6, 10, 0)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (7, 10, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (2, 11, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (12, 11, 2)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (13, 11, 0)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (9, 12, null)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (3, 12, 1)
+  INTO participare (id_jucator, id_meci, nr_goluri) VALUES (4, 12, 1)
+SELECT * FROM DUAL;
+
+COMMIT;
+
+CREATE SEQUENCE CLIENT_ID
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 999999999
+NOCYCLE;
+
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'John', 'Howard', 'john@ymail.com');   
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Rick', 'Harley', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Rodrigo', 'Luiz', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Johnathan', 'Ben', 'jben@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Marc', 'Julian', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Brandt', 'Sven', 'bsven@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Kante', 'Pierre', 'kpier@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Alphonse', 'Cedric', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Blanc', 'Karim', 'blank@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Lewis', 'Eddie', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Fonseca', 'Paulo', 'fons_p@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Maguire', 'Jordan', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Glimour', 'Billy', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Cuadrado', 'Alvaro', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Carrasco', 'Ian', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Kant', 'Joshua', 'joshka@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'John', 'Richard', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Pedro', 'Fernando', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Moreno', 'Ferran', 'ferrmo@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Silva', 'Ribeiro', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Sousa', 'Gabriel', 'gsousa@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Lahm', 'Emmile', 'lahmille@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Nazario', 'Roberto', 'nazarob@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Charles', 'Howard', 'choward@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Fernandes', 'Bernardo', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Pavard', 'Lucas', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Hernandez', 'Philippe', 'pherna@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Trent', 'James', 'jtrent@ymail.com');
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Gerrard', 'Aaron', null);
+COMMIT;
+INSERT INTO client (id_client, nume, prenume, email) VALUES (CLIENT_ID.NEXTVAL, 'Fernandes', 'Mariano', null);
+COMMIT;
+
+SELECT * 
+FROM client;
+
+INSERT ALL
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (1, 1, 1, 123, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (2, 1, 4, 121, 300)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (3, 1, 10, 312, 500)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (4, 2, 11, 1123, 3200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (5, 2, 14, 1001, 420)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (6, 2, 30, 311, 1200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (7, 3, 11, 421, 760)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (8, 3, 21, 12, 50)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (9, 4, 25, 123, 1200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (10, 5, 2, 111, 40)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (11, 5, 3, 441, 240)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (12, 5, 4, 3221, 1000)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (13, 6, 5, 221, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (14, 6, 6, 222, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (15, 6, 7, 3312, 220)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (16, 7, 7, 2123, 120)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (17, 7, 8, 44122, 1200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (18, 7, 9, 224, 50)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (19, 8, 10, 100, 550)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (20, 8, 11, 410, 650)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (21, 8, 12, 31, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (22, 9, 13, 1, 1200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (23, 9, 14, 5, 500)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (24, 9, 15, 31, 190)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (25, 10, 16, 41, 1400)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (26, 10, 17, 13, 50)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (27, 10, 18, 22, null)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (28, 10, 19, 200, null)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (29, 11, 20, 323, 1200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (30, 11, 21, 423, null)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (31, 11, 22, 512, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (32, 11, 23, 13, 450)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (33, 12, 24, 123, 790)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (34, 12, 25, 143, 810)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (35, 12, 26, 121, 50)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (36, 4, 27, 113, null)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (37, 2, 28, 901, 120)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (38, 1, 29, 221, 320)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (39, 5, 30, 1233, null)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (40, 2, 17, 1123, 200)
+   INTO bilet (id_bilet, id_meci, id_client, nr_scaun, pret) VALUES (41, 3, 4, 761, 200)
+SELECT * FROM DUAL;
+
+COMMIT;
